@@ -19,6 +19,9 @@
 #include <vertex.h>
 #include <sphere.h>
 
+#define ENABLE_NXLINK
+#include <nxlink.h>
+
 //-----------------------------------------------------------------------------
 // EGL initialization
 //-----------------------------------------------------------------------------
@@ -31,7 +34,7 @@ static bool initEgl(NWindow* win) {
     // Connect to the EGL default display
     s_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     if (!s_display) {
-        printf("Could not connect to display! error: %d", eglGetError());
+        TRACE("Could not connect to display! error: %d", eglGetError());
         goto _fail0;
     }
 
@@ -40,7 +43,7 @@ static bool initEgl(NWindow* win) {
 
     // Select OpenGL (Core) as the desired graphics API
     if (eglBindAPI(EGL_OPENGL_API) == EGL_FALSE) {
-        printf("Could not set API! error: %d", eglGetError());
+        TRACE("Could not set API! error: %d", eglGetError());
         goto _fail1;
     }
 
@@ -59,14 +62,14 @@ static bool initEgl(NWindow* win) {
     };
     eglChooseConfig(s_display, framebufferAttributeList, &config, 1, &numConfigs);
     if (numConfigs == 0) {
-        printf("No config found! error: %d", eglGetError());
+        TRACE("No config found! error: %d", eglGetError());
         goto _fail1;
     }
 
     // Create an EGL window surface
     s_surface = eglCreateWindowSurface(s_display, config, win, nullptr);
     if (!s_surface) {
-        printf("Surface creation failed! error: %d", eglGetError());
+        TRACE("Surface creation failed! error: %d", eglGetError());
         goto _fail1;
     }
 
@@ -79,7 +82,7 @@ static bool initEgl(NWindow* win) {
     };
     s_context = eglCreateContext(s_display, config, EGL_NO_CONTEXT, contextAttributeList);
     if (!s_context) {
-        printf("Context creation failed! error: %d", eglGetError());
+        TRACE("Context creation failed! error: %d", eglGetError());
         goto _fail2;
     }
 
@@ -171,7 +174,7 @@ static GLuint createAndCompileShader(GLenum type, const char* source) {
 
     GLuint handle = glCreateShader(type);
     if (!handle) {
-        printf("%u: cannot create shader", type);
+        TRACE("%u: cannot create shader", type);
         return 0;
     }
     glShaderSource(handle, 1, &source, nullptr);
@@ -180,7 +183,7 @@ static GLuint createAndCompileShader(GLenum type, const char* source) {
 
     if (!success) {
         glGetShaderInfoLog(handle, sizeof(msg), nullptr, msg);
-        printf("%u: %s\n", type, msg);
+        TRACE("%u: %s\n", type, msg);
         glDeleteShader(handle);
         return 0;
     }
@@ -212,7 +215,7 @@ static void sceneInit() {
     if (!success) {
         char buf[512];
         glGetProgramInfoLog(s_program, sizeof(buf), nullptr, buf);
-        printf("Link error: %s", buf);
+        TRACE("Link error: %s", buf);
     }
     glDeleteShader(vsh);
     glDeleteShader(fsh);
