@@ -1,10 +1,11 @@
 #ifndef __VERTEX_H_
 #define __VERTEX_H_
 
-struct Vertex {
-    float position[3];
-    float color[3];
-};
+#include <glm/vec3.hpp>
 
+struct Vertex {
+    glm::vec3 position;
+    glm::vec3 color;
+};
 
 #endif
