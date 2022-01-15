@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <set>
+
 #include <switch.h>
 
 #include <EGL/egl.h>     // EGL library
@@ -199,7 +201,15 @@ static unsigned int color_uniform_loc;
 static glm::mat4 transformation_matrix = glm::mat4(1.0f);
 static glm::mat4 translation_matrix = glm::mat4(1.0f);
 static glm::vec3 color = glm::vec3(1.0f, 0.0f, 0.0f);
-static glm::vec3 line_color = glm::vec3(0.0f, 0.0f, 0.0f);
+
+static glm::vec3 sphere_base_color = glm::vec3(1.0f, 1.0f, 1.0f);
+static glm::vec3 line_color = glm::vec3(0.0f);
+
+std::set<int> changed_indeces = {};
+
+static bool is_changing_color = false;
+static int selected_color = 0; //0: red, 1: blue, 2: green
+static int prev_color = 0; //0: red, 1: blue, 2: green
 
 static void sceneInit() {
     GLint vsh = createAndCompileShader(GL_VERTEX_SHADER, vertexShaderSource);
@@ -252,10 +262,66 @@ static void sceneRender() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    if (changed_indeces.size() < sizeof(sphere) / sizeof(Vertex)){
+        int i = rand() % 240;
+        while (true) {
+            i = rand() % 240;
+            if (changed_indeces.find(i) == changed_indeces.end())
+                break;
+        }
+        sphere[i].color = color; 
+        sphere[i].color = color; 
+        sphere[i].color = color; 
+        changed_indeces.insert(i);
+    }
+    if (changed_indeces.size() < sizeof(sphere) / sizeof(Vertex)){
+        int i = rand() % 240;
+        while (true) {
+            i = rand() % 240;
+            if (changed_indeces.find(i) == changed_indeces.end())
+                break;
+        }
+        sphere[i].color = color; 
+        sphere[i].color = color; 
+        sphere[i].color = color; 
+        changed_indeces.insert(i);
+    }
+    if (changed_indeces.size() < sizeof(sphere) / sizeof(Vertex)){
+        int i = rand() % 240;
+        while (true) {
+            i = rand() % 240;
+            if (changed_indeces.find(i) == changed_indeces.end())
+                break;
+        }
+        sphere[i].color = color; 
+        sphere[i].color = color; 
+        sphere[i].color = color; 
+        changed_indeces.insert(i);
+    }
+    if (changed_indeces.size() < sizeof(sphere) / sizeof(Vertex)){
+        int i = rand() % 240;
+        while (true) {
+            i = rand() % 240;
+            if (changed_indeces.find(i) == changed_indeces.end())
+                break;
+        }
+        sphere[i].color = color; 
+        sphere[i].color = color; 
+        sphere[i].color = color; 
+        changed_indeces.insert(i);
+    }
+    else {
+        is_changing_color = false;
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, s_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(sphere), sphere, GL_STATIC_DRAW);
+
     glUniformMatrix4fv(transformation_uniform_loc, 1, GL_FALSE, glm::value_ptr(transformation_matrix));
     glUniformMatrix4fv(translation_uniform_loc, 1, GL_FALSE, glm::value_ptr(translation_matrix));
 
-    glUniform3fv(color_uniform_loc, 1, glm::value_ptr(color));
+    glUniform3fv(color_uniform_loc, 1, glm::value_ptr(sphere_base_color));
+
 
     // draw our first triangle
     glUseProgram(s_program);
@@ -298,28 +364,70 @@ int main(int argc, char* argv[]) {
     while (appletMainLoop()) {
         // Get and process input
         padUpdate(&pad);
-        u32 kDown = padGetButtons(&pad);
-        if (kDown & HidNpadButton_Plus)
-            break;
-        if (kDown & (HidNpadButton_Up | HidNpadButton_StickLUp))
-            color = glm::vec3(0.0f, 1.0f, 0.0f);
-        else if (kDown & (HidNpadButton_Down | HidNpadButton_StickLDown))
-            color = glm::vec3(0.0f, 0.0f, 1.0f);
-        else
-            color = glm::vec3(1.0f, 0.0f, 0.0f);
+        u32 buttons_state = padGetButtons(&pad);
 
-        if (kDown & (HidNpadButton_Left | HidNpadButton_StickLLeft)) {
+        if (buttons_state & (HidNpadButton_Left | HidNpadButton_StickLLeft)) {
             translation_matrix = glm::translate(translation_matrix, glm::vec3(-0.01f, 0.0f, 0.0f));
             transformation_matrix = glm::rotate(transformation_matrix, glm::radians(-2.3f), glm::vec3(0.0f, 1.0f, 0.0f));
         }
-        else if (kDown & (HidNpadButton_Right | HidNpadButton_StickLRight)) {
+        else if (buttons_state & (HidNpadButton_Right | HidNpadButton_StickLRight)) {
             translation_matrix = glm::translate(translation_matrix, glm::vec3(0.01f, 0.0f, 0.0f));
             transformation_matrix = glm::rotate(transformation_matrix, glm::radians(2.3f), glm::vec3(0.0f, 1.0f, 0.0f));
+        }
+
+        //switch to blue
+        if (buttons_state & (HidNpadButton_Up | HidNpadButton_StickLUp)) {
+            selected_color = 2;
+            if (prev_color != selected_color) {
+                is_changing_color = true;
+                changed_indeces.clear();
+            }
+            else is_changing_color = false;
+        }
+        else if (buttons_state & (HidNpadButton_Down | HidNpadButton_StickLDown)) {
+            selected_color = 1;
+            if (prev_color != selected_color) {
+                is_changing_color = true;
+                changed_indeces.clear();
+            }
+            else is_changing_color = false;
+        }
+        else {
+            selected_color = 0;
+            if (prev_color != selected_color) {
+                is_changing_color = true;
+                changed_indeces.clear();
+            }
+            else is_changing_color = false;
+        }
+
+        u32 keys_down = padGetButtonsDown(&pad);
+        if (keys_down & HidNpadButton_Minus) {
+            translation_matrix = glm::mat4(1.0f);
+            transformation_matrix = glm::mat4(1.0f);
+        }
+        else if (keys_down & HidNpadButton_Plus) {
+            break;
+        }
+
+        switch(selected_color) {
+            case 0:
+                color = glm::vec3(1.0f, 0.0f, 0.0f);
+                break;
+            case 1:
+                color = glm::vec3(0.0f, 1.0f, 0.0f);
+                break;
+            case 2:
+                color = glm::vec3(0.0f, 0.0f, 1.0f);
+                break;
+            default:
+                break;
         }
 
         // Render stuff!
         sceneRender();
         eglSwapBuffers(s_display, s_surface);
+        prev_color = selected_color;
     }
 
     // Deinitialize our scene
